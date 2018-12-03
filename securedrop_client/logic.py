@@ -598,8 +598,12 @@ class Client(QObject):
     def _on_delete_source_complete(self, result):
         """Trigger this when delete operation on source is completed."""
         if result:
-            self.sync_api()
             self.gui.update_error_status("")
+            self.gui.remove_widget()
+            self.sync_api()
+            deprecated_widget = self.gui.main_view.view_layout.takeAt(0)
+            if deprecated_widget:
+                deprecated_widget.widget().setVisible(False)
         else:
             logging.info("failed to delete source at server")
             error = _('Failed to delete source at server')
