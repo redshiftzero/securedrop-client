@@ -23,7 +23,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, \
-    QMessageBox, QToolButton
+    QMessageBox, QToolButton, QSizePolicy
 
 from securedrop_client.resources import load_svg, load_image
 from securedrop_client.utils import humanize_filesize
@@ -445,7 +445,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding: 10px; border: 1px solid #999; border-radius: 18px;"
+    css = "padding: 10px; min-height: 25px; border: 1px solid #999; border-radius: 18px;"
 
     def __init__(self, text):
         super().__init__()
@@ -453,6 +453,7 @@ class SpeechBubble(QWidget):
         self.setLayout(layout)
         message = QLabel(html.escape(text, quote=False))
         message.setWordWrap(True)
+        message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(message)
 
 
@@ -564,10 +565,11 @@ class ConversationView(QWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.setStyleSheet("background-color: #fff;")
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
         self.container.setLayout(self.conversation_layout)
-        self.container.setStyleSheet("background-color: #fff;")
+        self.container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.scroll = QScrollArea()
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
