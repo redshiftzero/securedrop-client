@@ -407,6 +407,7 @@ class LoginDialog(QDialog):
 
         self.error_label = QLabel('')
         self.error_label.setObjectName('error_label')
+        self.error_label.setStyleSheet('color: red')
 
         layout.addStretch()
         layout.addWidget(self.title)
