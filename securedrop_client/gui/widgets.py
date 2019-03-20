@@ -20,7 +20,7 @@ import logging
 import arrow
 import html
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar
@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 class StatusBar(QStatusBar):
     def __init__(self):
         super().__init__()
+
         self.setStyleSheet('QStatusBar { background-color: #fff; } QStatusBar::item { border: none; } QPushButton { border: none; }')
 
         self.refresh = QPushButton()
@@ -83,30 +84,50 @@ class ToolBar(QWidget):
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
 
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 10, 20, 10)
+
+        self.setAutoFillBackground(True)
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(load_image('hexes.svg')))
+        self.setPalette(palette)
+
+        self.user_icon = QLabel()
+        self.user_icon.hide()
         self.user_state = QLabel()
         self.user_state.hide()
-        self.journalist_menu = JournalistMenuButton(self)
-        self.journalist_menu.hide()
+        self.user_menu = JournalistMenuButton(self)
+        self.user_menu.hide()
 
-        self.login = QPushButton(_('Sign in'))
+        self.login = QPushButton(_('SIGN IN'))
         self.login.setMinimumSize(200, 40)
+        self.login.setStyleSheet('{ border: none; }')
+        button_palette = self.login.palette()
+        button_palette.setColor(QPalette.Button, QColor('#eee'))
+        button_palette.setColor(QPalette.ButtonText, QColor('#000'))
+        self.login.setAutoFillBackground(True)
+        self.login.setPalette(button_palette)
+        self.login.update()
         self.login.clicked.connect(self.on_login_clicked)
 
-        self.logo = QLabel()
-        self.logo.setPixmap(load_image('icon.png'))
-        self.logo.setMinimumSize(200, 200)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        journalist_layout = QHBoxLayout()
-        journalist_layout.addWidget(self.user_state, 5)
-        journalist_layout.addWidget(self.login, 5)
-        journalist_layout.addWidget(self.journalist_menu, 5)
-        journalist_layout.addStretch()
+        logo = QLabel()
+        logo.setMinimumSize(200, 200)
+        logo.setPixmap(load_image('logo.png'))
 
-        layout.addLayout(journalist_layout)
-        layout.addWidget(self.logo)
+        user_layout = QHBoxLayout()
+        user_layout.addWidget(self.user_icon, 5, Qt.AlignLeft)
+        user_layout.addWidget(self.user_state, 5, Qt.AlignLeft)
+        user_layout.addWidget(self.login, 5, Qt.AlignLeft)
+        user_layout.addWidget(self.user_menu, 5, Qt.AlignLeft)
+        user_layout.addStretch()
+
+        layout.addLayout(user_layout)
+        layout.addWidget(spacer, 5)
+        layout.addWidget(logo, 3, Qt.AlignCenter)
         layout.addStretch()
 
     def setup(self, window, controller):
@@ -125,17 +146,24 @@ class ToolBar(QWidget):
         Update the UI to reflect that the user is logged in as "username".
         """
         self.login.hide()
-        self.user_state.setText(html.escape(username))
+
+        self.user_icon.setText(_('<h3>jo</h3>'))
+        self.user_icon.setStyleSheet('QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }')
+        self.user_icon.show()
+
+        self.user_state.setText(_('<h3>{}</h3>').format(html.escape(username)))
         self.user_state.show()
-        self.journalist_menu.show()
+
+        self.user_menu.show()
 
     def set_logged_out(self):
         """
         Update the UI to a logged out state.
         """
         self.login.show()
+        self.user_icon.hide()
         self.user_state.hide()
-        self.journalist_menu.hide()
+        self.user_menu.hide()
 
     def on_login_clicked(self):
         """
@@ -173,6 +201,7 @@ class MainView(QWidget):
         self.error_status = QLabel('')
         self.error_status.setObjectName('error_label')
         left_layout.addWidget(self.error_status)
+        self.error_status.hide()
 
         self.layout.addWidget(left_column, 4)
 
@@ -917,7 +946,7 @@ class JournalistMenu(QMenu):
 
     def __init__(self, parent):
         super().__init__()
-        self.logout = QAction(_('Sign out'))
+        self.logout = QAction(_('SIGN OUT'))
         self.addAction(self.logout)
         self.logout.triggered.connect(parent.on_logout_clicked)
 
@@ -931,7 +960,10 @@ class JournalistMenuButton(QToolButton):
     def __init__(self, parent):
         super().__init__()
 
-        self.setStyleSheet('QToolButton::menu-indicator { image: none; } QToolButton { border: none; }')
+        self.setStyleSheet('''
+            QToolButton::menu-indicator { image: none; }
+            QToolButton { border: none; }
+        ''')
         arrow = load_image("dropdown_arrow.svg")
         self.setIcon(QIcon(arrow))
         self.setMinimumSize(20, 20)
