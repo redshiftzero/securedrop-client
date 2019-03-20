@@ -23,7 +23,7 @@ from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
-    QToolButton, QSizePolicy, QTextEdit
+    QToolButton, QSizePolicy, QTextEdit, QStatusBar
 from typing import List
 from uuid import uuid4
 
@@ -36,6 +36,46 @@ from securedrop_client.utils import humanize_filesize
 logger = logging.getLogger(__name__)
 
 
+class StatusBar(QStatusBar):
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet('QStatusBar { background-color: #fff; } QStatusBar::item { border: none; } QPushButton { border: none; }')
+
+        self.refresh = QPushButton()
+        self.refresh.clicked.connect(self.on_refresh_clicked)
+        self.refresh.setMaximumSize(30, 30)
+        refresh_pixmap = load_image('refresh.svg')
+        self.refresh.setIcon(QIcon(refresh_pixmap))
+        self.addPermanentWidget(self.refresh)  # widget may not be obscured by temporary messages
+
+    def setup(self, controller):
+        """
+        Assign a controller object (containing the application logic).
+        """
+        self.controller = controller
+        self.controller.sync_events.connect(self._on_sync_event)
+
+    def on_refresh_clicked(self):
+        """
+        Called when the refresh button is clicked.
+        """
+        self.controller.sync_api()
+
+    def _on_sync_event(self, data):
+        """
+        Called when the refresh call completes
+        """
+        self.refresh.setEnabled(data != 'syncing')
+
+
+    def set_message(self, message, duration=0):
+        """
+        Display a status message to the user. Optionally, supply a duration
+        (in milliseconds), the default will continuously show the message.
+        """
+        self.showMessage(message, duration)
+
+
 class ToolBar(QWidget):
     """
     Represents the tool bar across the top of the user interface.
@@ -46,34 +86,23 @@ class ToolBar(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.user_state = QLabel(_('Signed out.'))
+        self.user_state = QLabel()
+        self.user_state.hide()
+        self.journalist_menu = JournalistMenuButton(self)
+        self.journalist_menu.hide()
 
         self.login = QPushButton(_('Sign in'))
-        self.login.setMaximumSize(80, 30)
+        self.login.setMinimumSize(200, 40)
         self.login.clicked.connect(self.on_login_clicked)
-
-        self.logout = QPushButton(_('Sign out'))
-        self.logout.clicked.connect(self.on_logout_clicked)
-        self.logout.setMaximumSize(80, 30)
-        self.logout.setVisible(False)
-
-        self.refresh = QPushButton()
-        self.refresh.clicked.connect(self.on_refresh_clicked)
-        self.refresh.setMaximumSize(30, 30)
-        refresh_pixmap = load_image('refresh.svg')
-
-        self.refresh.setIcon(QIcon(refresh_pixmap))
-        self.refresh.show()
 
         self.logo = QLabel()
         self.logo.setPixmap(load_image('icon.png'))
         self.logo.setMinimumSize(200, 200)
 
         journalist_layout = QHBoxLayout()
-        journalist_layout.addWidget(self.refresh, 1)
         journalist_layout.addWidget(self.user_state, 5)
         journalist_layout.addWidget(self.login, 5)
-        journalist_layout.addWidget(self.logout, 5)
+        journalist_layout.addWidget(self.journalist_menu, 5)
         journalist_layout.addStretch()
 
         layout.addLayout(journalist_layout)
@@ -91,25 +120,22 @@ class ToolBar(QWidget):
         self.window = window
         self.controller = controller
 
-        self.controller.sync_events.connect(self._on_sync_event)
-
     def set_logged_in_as(self, username):
         """
         Update the UI to reflect that the user is logged in as "username".
         """
+        self.login.hide()
         self.user_state.setText(html.escape(username))
-        self.login.setVisible(False)
-        self.logout.setVisible(True)
-        self.refresh.setVisible(True)
+        self.user_state.show()
+        self.journalist_menu.show()
 
     def set_logged_out(self):
         """
         Update the UI to a logged out state.
         """
-        self.user_state.setText(_('Signed out.'))
-        self.login.setVisible(True)
-        self.logout.setVisible(False)
-        self.refresh.setVisible(False)
+        self.login.show()
+        self.user_state.hide()
+        self.journalist_menu.hide()
 
     def on_login_clicked(self):
         """
@@ -122,18 +148,6 @@ class ToolBar(QWidget):
         Called when the logout button is clicked.
         """
         self.controller.logout()
-
-    def on_refresh_clicked(self):
-        """
-        Called when the refresh button is clicked.
-        """
-        self.controller.sync_api()
-
-    def _on_sync_event(self, data):
-        """
-        Called when the refresh call completes
-        """
-        self.refresh.setEnabled(data != 'syncing')
 
 
 class MainView(QWidget):
@@ -895,6 +909,39 @@ class DeleteSourceAction(QAction):
             self.messagebox.launch()
 
 
+class JournalistMenu(QMenu):
+    """A menu next to the journalist username.
+
+    A menu that provides login options.
+    """
+
+    def __init__(self, parent):
+        super().__init__()
+        self.logout = QAction(_('Sign out'))
+        self.addAction(self.logout)
+        self.logout.triggered.connect(parent.on_logout_clicked)
+
+
+class JournalistMenuButton(QToolButton):
+    """An menu button for the journalist menu
+
+    This button is responsible for launching the journalist menu on click.
+    """
+
+    def __init__(self, parent):
+        super().__init__()
+
+        self.setStyleSheet('QToolButton::menu-indicator { image: none; } QToolButton { border: none; }')
+        arrow = load_image("dropdown_arrow.svg")
+        self.setIcon(QIcon(arrow))
+        self.setMinimumSize(20, 20)
+
+        self.menu = JournalistMenu(parent)
+        self.setMenu(self.menu)
+
+        self.setPopupMode(QToolButton.InstantPopup)
+
+
 class SourceMenu(QMenu):
     """Renders menu having various operations.
 
@@ -923,7 +970,7 @@ class SourceMenu(QMenu):
 class SourceMenuButton(QToolButton):
     """An ellipse based source menu button.
 
-    This button is responsible for launching menu on click.
+    This button is responsible for launching the source menu on click.
     """
 
     def __init__(self, source, controller):

@@ -20,13 +20,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget, \
-    QStatusBar
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
 from typing import List
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
-from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, SourceConversationWrapper
+from securedrop_client.gui.widgets import ToolBar, MainView, LoginDialog, StatusBar, \
+    SourceConversationWrapper
 from securedrop_client.resources import load_icon
 
 logger = logging.getLogger(__name__)
@@ -63,8 +63,7 @@ class Window(QMainWindow):
         self.central_widget.setLayout(central_widget_layout)
         self.setCentralWidget(self.central_widget)
 
-        self.status_bar = QStatusBar(self)
-        self.status_bar.setStyleSheet('background-color: #fff;')
+        self.status_bar = StatusBar()
         central_widget_layout.addWidget(self.status_bar)
 
         self.widget = QWidget()
@@ -98,7 +97,7 @@ class Window(QMainWindow):
         """
         self.controller = controller  # Reference the Client logic instance.
         self.tool_bar.setup(self, controller)
-
+        self.status_bar.setup(controller)
         self.set_status(_('Started SecureDrop Client. Please sign in.'), 20000)
 
         self.login_dialog = LoginDialog(self)
@@ -201,4 +200,4 @@ class Window(QMainWindow):
         Display a status message to the user. Optionally, supply a duration
         (in milliseconds), the default will continuously show the message.
         """
-        self.status_bar.showMessage(message, duration)
+        self.status_bar.set_message(message, duration)
