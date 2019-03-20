@@ -271,4 +271,4 @@ def test_set_status(mocker):
     w = Window('mock')
     w.status_bar = mocker.MagicMock()
     w.set_status('hello', 100)
-    w.status_bar.showMessage.assert_called_once_with('hello', 100)
+    w.status_bar.set_message.assert_called_once_with('hello', 100)

@@ -20,7 +20,7 @@ import logging
 import arrow
 import html
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor
+from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar
@@ -95,17 +95,18 @@ class ToolBar(QWidget):
         palette = QPalette()
         palette.setBrush(QPalette.Background, QBrush(load_image('hexes.svg')))
         self.setPalette(palette)
-
         self.user_icon = QLabel()
+        self.user_icon.setFont(QFont("Helvetica [Cronyx]", 16, QFont.Bold))
         self.user_icon.hide()
         self.user_state = QLabel()
+        self.user_state.setFont(QFont("Helvetica [Cronyx]", 12, QFont.Bold))
         self.user_state.hide()
         self.user_menu = JournalistMenuButton(self)
         self.user_menu.hide()
 
         self.login = QPushButton(_('SIGN IN'))
+        self.login.setFont(QFont("Helvetica [Cronyx]", 10))
         self.login.setMinimumSize(200, 40)
-        self.login.setStyleSheet('{ border: none; }')
         button_palette = self.login.palette()
         button_palette.setColor(QPalette.Button, QColor('#eee'))
         button_palette.setColor(QPalette.ButtonText, QColor('#000'))
@@ -150,13 +151,13 @@ class ToolBar(QWidget):
         """
         self.login.hide()
 
-        self.user_icon.setText(_('<h3>jo</h3>'))
+        self.user_icon.setText(_('jo'))
         self.user_icon.setStyleSheet('''
             QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }
         ''')
         self.user_icon.show()
 
-        self.user_state.setText(_('<h3>{}</h3>').format(html.escape(username)))
+        self.user_state.setText(_('{}').format(html.escape(username)))
         self.user_state.show()
 
         self.user_menu.show()
@@ -952,6 +953,7 @@ class JournalistMenu(QMenu):
     def __init__(self, parent):
         super().__init__()
         self.logout = QAction(_('SIGN OUT'))
+        self.logout.setFont(QFont("Helvetica [Cronyx]", 10))
         self.addAction(self.logout)
         self.logout.triggered.connect(parent.on_logout_clicked)
 
