@@ -40,7 +40,11 @@ class StatusBar(QStatusBar):
     def __init__(self):
         super().__init__()
 
-        self.setStyleSheet('QStatusBar { background-color: #fff; } QStatusBar::item { border: none; } QPushButton { border: none; }')
+        self.setStyleSheet('''
+            QStatusBar { background-color: #fff; }
+            QStatusBar::item { border: none; }
+            QPushButton { border: none; }
+        ''')
 
         self.refresh = QPushButton()
         self.refresh.clicked.connect(self.on_refresh_clicked)
@@ -67,7 +71,6 @@ class StatusBar(QStatusBar):
         Called when the refresh call completes
         """
         self.refresh.setEnabled(data != 'syncing')
-
 
     def set_message(self, message, duration=0):
         """
@@ -148,7 +151,9 @@ class ToolBar(QWidget):
         self.login.hide()
 
         self.user_icon.setText(_('<h3>jo</h3>'))
-        self.user_icon.setStyleSheet('QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }')
+        self.user_icon.setStyleSheet('''
+            QLabel { background-color: #045fb4; color: cyan; padding: 10; border: 1px solid gray; }
+        ''')
         self.user_icon.show()
 
         self.user_state.setText(_('<h3>{}</h3>').format(html.escape(username)))
