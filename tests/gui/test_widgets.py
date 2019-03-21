@@ -9,7 +9,7 @@ from securedrop_client import logic
 from securedrop_client.gui.widgets import ToolBar, MainView, SourceList, SourceWidget, \
     LoginDialog, SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, \
     ConversationView, DeleteSourceMessageBox, DeleteSourceAction, SourceMenu, StatusBar, \
-    SourceConversationWrapper, ReplyBoxWidget
+    SourceConversationWrapper, ReplyBoxWidget, JournalistMenu
 
 
 app = QApplication([])
@@ -95,6 +95,17 @@ def test_ToolBar_on_logout_clicked(mocker):
     tb = ToolBar(None)
     tb.controller = mocker.MagicMock()
     tb.on_logout_clicked()
+    tb.controller.logout.assert_called_once_with()
+
+
+def test_JournalistMenu_on_logout_clicked_action_triggered(mocker):
+    """
+    When the sign-out option is selected, call on_logout_clicked.
+    """
+    tb = ToolBar(None)
+    tb.controller = mocker.MagicMock()
+    jm = JournalistMenu(tb)
+    jm.actions()[0].trigger()
     tb.controller.logout.assert_called_once_with()
 
 
