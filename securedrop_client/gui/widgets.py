@@ -324,6 +324,7 @@ class MainView(QWidget):
         self.setLayout(self.layout)
 
         left_column = QWidget(parent=self)
+        left_column.setMinimumWidth(445)
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_column.setLayout(left_layout)
@@ -335,8 +336,10 @@ class MainView(QWidget):
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
+        self.view_layout.setSpacing(0)
         self.view_holder = QWidget()
-        self.view_holder.setStyleSheet('background: #efeef7;')
+        self.view_holder.setStyleSheet('background: #f3f4f9;')
+        self.view_holder.setMinimumWidth(610)
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -886,7 +889,7 @@ class ConversationView(QWidget):
         self.source = source_db_object
         self.sdc_home = sdc_home
         self.controller = controller
-        self.setStyleSheet("background-color: #fff;")
+        self.setStyleSheet("background-color: #f3f4f9; border: none; ")
 
         self.container = QWidget()
         self.conversation_layout = QVBoxLayout()
