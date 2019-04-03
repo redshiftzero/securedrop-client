@@ -28,7 +28,7 @@ from typing import List
 from uuid import uuid4
 
 from securedrop_client.db import Source, Message, File, Reply
-from securedrop_client.gui import SvgLabel, SvgPushButton
+from securedrop_client.gui import SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.logic import Client
 from securedrop_client.resources import load_svg, load_icon, load_image
 from securedrop_client.utils import humanize_filesize
@@ -579,7 +579,7 @@ class MainView(QWidget):
 
     CSS = '''
     #view_holder {
-        background-color: #fff;
+        background-color: #f3f4f9;
     }
     '''
 
@@ -595,6 +595,7 @@ class MainView(QWidget):
         self.setLayout(self.layout)
 
         left_column = QWidget(parent=self)
+        left_column.setMinimumWidth(445)
         left_layout = QVBoxLayout()
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_column.setLayout(left_layout)
@@ -606,8 +607,10 @@ class MainView(QWidget):
 
         self.view_layout = QVBoxLayout()
         self.view_layout.setContentsMargins(0, 0, 0, 0)
+        self.view_layout.setSpacing(0)
         self.view_holder = QWidget()
         self.view_holder.setObjectName('view_holder')  # Set css id
+        self.view_holder.setMinimumWidth(610)
         self.view_holder.setLayout(self.view_layout)
 
         self.layout.addWidget(self.view_holder, 6)
@@ -644,6 +647,10 @@ class SourceList(QListWidget):
     """
 
     CSS = '''
+    QListWidget {
+        show-decoration-selected: 0;
+        border: none;
+    }
     QListWidget::item:selected {
         background: #efeef7;
     }
@@ -746,6 +753,18 @@ class SourceWidget(QWidget):
     QWidget#color_bar {
         background-color: #9211ff;
     }
+    QLabel#source_name {
+        font-family: Open Sans;
+        font-size: 16px;
+        font-weight: bold;
+        color: #000;
+    }
+    QLabel#time_stamp {
+        font-family: Open Sans;
+        font-size: 10px;
+        font-weight: bold;
+        color: #000;
+    }
     '''
 
     def __init__(self, parent: QWidget, source: Source):
@@ -761,75 +780,78 @@ class SourceWidget(QWidget):
         self.setStyleSheet(self.CSS)
 
         self.source = source
-        self.name = QLabel()
-        self.name.setFont(QFont("Open Sans", 16))
-        self.updated = QLabel()
-        self.updated.setFont(QFont("Open Sans", 10))
 
         layout = QVBoxLayout()
         self.setLayout(layout)
+
+        self.name = QLabel()
+        self.name.setObjectName('source_name')
+
+        self.last_updated_timestamp = QLabel()
+        self.last_updated_timestamp.setObjectName('time_stamp')
 
         self.summary = QWidget(self)
         self.summary.setObjectName('summary')
         self.summary_layout = QHBoxLayout()
         self.summary.setLayout(self.summary_layout)
 
-        self.attached = load_svg('paperclip.svg')
-        self.attached.setMaximumSize(16, 16)
+        self.paperclip = load_svg('paperclip.svg')
+        self.paperclip.setMaximumSize(16, 16)
 
-        self.summary_layout.addWidget(self.name)
-        self.summary_layout.addStretch()
-        self.summary_layout.addWidget(self.attached)
+        self.star_button = StarToggleButton()
+        # self.star_button.pressed.connect(self._on_star_pressed)
+        # self.star_button.toggled.connect(self._on_star_toggled)
 
         layout.addWidget(self.summary)
-        layout.addWidget(self.updated)
+        layout.addWidget(self.last_updated_timestamp)
 
         self.delete = load_svg('cross.svg')
         self.delete.setMaximumSize(16, 16)
         self.delete.mouseReleaseEvent = self.delete_source
 
+        self.summary_layout.addWidget(self.star_button)
+        self.summary_layout.addWidget(self.name)
+        self.summary_layout.addStretch()
+        self.summary_layout.addWidget(self.paperclip)
         self.summary_layout.addWidget(self.delete)
+
+        # Update gui to reflect source state
         self.update()
+
+        self.authenticated = False
 
     def setup(self, controller):
         """
         Pass through the controller object to this widget.
         """
         self.controller = controller
+        self.controller.authentication_state.connect(self._on_authentication)
 
-    def display_star_icon(self):
-        """
-        Show the correct star icon
-        """
-        if getattr(self, 'starred', None):  # Delete icon if it exists.
-            self.summary_layout.removeWidget(self.starred)
+    def is_authenticated(self):
+        return self.controller.api is not None
 
-        if self.source.is_starred:
-            self.starred = load_svg('star_on.svg')
-        else:
-            self.starred = load_svg('star_off.svg')
+    def _on_authentication(self, authenticated):
+        self.star_button.enable() if authenticated else self.star_button.disable()
+        self.authenticated = authenticated
 
-        self.summary_layout.addWidget(self.starred)
-        self.starred.setMaximumSize(16, 16)
-        self.starred.mousePressEvent = self.toggle_star
+    # def _on_star_toggled(self):
+    #     self.controller.update_star(self.source)
+
+    # def _on_star_pressed(self):
+    #     if not self.is_authenticated():
+    #         self.controller.on_action_requiring_login()
+    #         self.star_button.disable()
 
     def update(self):
         """
         Updates the displayed values with the current values from self.source.
         """
-        self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        self.display_star_icon()
+        self.last_updated_timestamp.setText(arrow.get(self.source.last_updated).humanize())
         self.name.setText("<strong>{}</strong>".format(
                           html.escape(self.source.journalist_designation)))
 
         if self.source.document_count == 0:
-            self.attached.hide()
-
-    def toggle_star(self, event):
-        """
-        Called when the star is clicked.
-        """
-        self.controller.update_star(self.source)
+            self.paperclip.hide()
 
     def delete_source(self, event):
         if self.controller.api is None:
@@ -838,6 +860,32 @@ class SourceWidget(QWidget):
         else:
             messagebox = DeleteSourceMessageBox(self, self.source, self.controller)
             messagebox.launch()
+
+
+class StarToggleButton(SvgToggleButton):
+    """
+    A button that shows whether or not a source is starred
+    """
+
+    css = '''
+    #star_button {
+        border: none;
+    }
+    '''
+
+    def __init__(self):
+        # Add svg images to button
+        super().__init__(
+            on='star_on.svg',
+            off='star_off.svg',
+            svg_size=QSize(22, 22))
+
+        # Set css id
+        self.setObjectName('star_button')
+
+        # Set styles
+        self.setStyleSheet(self.css)
+        self.setFixedSize(QSize(42, 42))
 
 
 class LoginDialog(QDialog):
@@ -983,8 +1031,8 @@ class SpeechBubble(QWidget):
     CSS = '''
     #speech_bubble {
         padding: 8px;
-        min-height:32px;
-        border:1px solid #999;
+        min-height: 32px;
+        border: none;
     }
     '''
 
@@ -1007,7 +1055,7 @@ class SpeechBubble(QWidget):
 
     @pyqtSlot(str, str)
     def _update_text(self, message_id: str, text: str) -> None:
-        """
+        """ border: none
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """

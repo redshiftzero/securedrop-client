@@ -414,7 +414,7 @@ def test_SourceList_update(mocker):
     Check the items in the source list are cleared and a new SourceWidget for
     each passed-in source is created along with an associated QListWidgetItem.
     """
-    sl = SourceList(None)
+    sl = SourceList()
 
     sl.clear = mocker.MagicMock()
     sl.addItem = mocker.MagicMock()
@@ -440,7 +440,7 @@ def test_SourceList_maintains_selection(mocker):
     """
     Maintains the selected item if present in new list
     """
-    sl = SourceList(None)
+    sl = SourceList()
     sources = [factory.Source(), factory.Source()]
     sl.setup(mocker.MagicMock())
     sl.update(sources)
@@ -458,7 +458,7 @@ def test_SourceWidget_init(mocker):
     """
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo bar baz'
-    sw = SourceWidget(None, mock_source)
+    sw = SourceWidget(mock_source)
     assert sw.source == mock_source
 
 
@@ -469,7 +469,7 @@ def test_SourceWidget_setup(mocker):
     mock_controller = mocker.MagicMock()
     mock_source = mocker.MagicMock()
 
-    sw = SourceWidget(None, mock_source)
+    sw = SourceWidget(mock_source)
     sw.setup(mock_controller)
 
     assert sw.controller == mock_controller
@@ -483,7 +483,7 @@ def test_SourceWidget_html_init(mocker):
     mock_source = mocker.MagicMock()
     mock_source.journalist_designation = 'foo <b>bar</b> baz'
 
-    sw = SourceWidget(None, mock_source)
+    sw = SourceWidget(mock_source)
     sw.name = mocker.MagicMock()
     sw.summary_layout = mocker.MagicMock()
 
@@ -493,73 +493,56 @@ def test_SourceWidget_html_init(mocker):
     sw.name.setText.assert_called_once_with('<strong>foo &lt;b&gt;bar&lt;/b&gt; baz</strong>')
 
 
-def test_SourceWidget_update_starred(mocker):
-    """
-    Ensure the widget displays the expected details from the source.
-    """
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.is_starred = True
-
-    sw = SourceWidget(None, mock_source)
-    sw.name = mocker.MagicMock()
-    sw.summary_layout = mocker.MagicMock()
-
-    mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
-    sw.update()
-
-    mock_load.assert_called_once_with('star_on.svg')
-    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
-
-
-def test_SourceWidget_update_unstarred(mocker):
-    """
-    Ensure the widget displays the expected details from the source.
-    """
-    mock_source = mocker.MagicMock()
-    mock_source.journalist_designation = 'foo bar baz'
-    mock_source.is_starred = False
-
-    sw = SourceWidget(None, mock_source)
-    sw.name = mocker.MagicMock()
-    sw.summary_layout = mocker.MagicMock()
-
-    mock_load = mocker.patch('securedrop_client.gui.widgets.load_svg')
-    sw.update()
-
-    mock_load.assert_called_once_with('star_off.svg')
-    sw.name.setText.assert_called_once_with('<strong>foo bar baz</strong>')
-
 
 def test_SourceWidget_update_attachment_icon():
     """
     Attachment icon identicates document count
     """
     source = factory.Source(document_count=1)
-    sw = SourceWidget(None, source)
+    sw = SourceWidget(source)
 
     sw.update()
-    assert not sw.attached.isHidden()
+    assert not sw.paperclip.isHidden()
 
     source.document_count = 0
 
     sw.update()
-    assert sw.attached.isHidden()
+    assert sw.paperclip.isHidden()
 
 
-def test_SourceWidget_toggle_star(mocker):
+def test_SourceWidget_toggle_star_on(mocker):
     """
-    The toggle_star method should call self.controller.update_star
+    The toggle_star method should toggle star from off to on
     """
     mock_controller = mocker.MagicMock()
-    mock_source = mocker.MagicMock()
+    source = mocker.MagicMock()
     event = mocker.MagicMock()
-
-    sw = SourceWidget(None, mock_source)
-    sw.controller = mock_controller
-    sw.controller.update_star = mocker.MagicMock()
+    sw = SourceWidget(source)
+    sw.source = source
+    load = mocker.patch('securedrop_client.gui.widgets.load_svg')
 
     sw.toggle_star(event)
+
+    load.assert_called_once_with('start_on.svg')
+
+
+def test_SourceWidget_toggle_star_off(mocker):
+    """
+    The toggle_star method should toggle star from on to off
+    """
+    mock_controller = mocker.MagicMock()
+    source = mocker.MagicMock()
+    source.is_starred = True
+    event = mocker.MagicMock()
+    sw = SourceWidget(source)
+    sw.source = source
+    sw.controller = mock_controller
+    sw.controller.update_star = mocker.MagicMock()
+    load = mocker.patch('securedrop_client.gui.widgets.load_svg')
+
+    sw.toggle_star(event)
+
+    load.assert_called_once_with('star_off.svg')
     sw.controller.update_star.assert_called_once_with(mock_source)
 
 
@@ -569,7 +552,7 @@ def test_SourceWidget_delete_source(mocker, session, source):
     mock_delete_source_message = mocker.MagicMock(
         return_value=mock_delete_source_message_box_object)
 
-    sw = SourceWidget(None, source['source'])
+    sw = SourceWidget(source['source'])
     sw.controller = mock_controller
 
     mocker.patch(
@@ -593,7 +576,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     mock_message_box_question.return_value = QMessageBox.Cancel
 
     mock_controller = mocker.MagicMock()
-    sw = SourceWidget(None, source)
+    sw = SourceWidget(source)
     sw.controller = mock_controller
 
     mocker.patch(
@@ -1452,7 +1435,7 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         'securedrop_client.gui.widgets.DeleteSourceMessageBox',
         mock_delete_source_message_box
     ):
-        source_widget = SourceWidget(None, mock_source)
+        source_widget = SourceWidget(mock_source)
         source_widget.setup(mock_controller)
         source_widget.delete_source(mock_event)
         mock_delete_source_message_box_obj.launch.assert_not_called()

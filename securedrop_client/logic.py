@@ -535,10 +535,10 @@ class Client(QObject):
         source_sdk_object = sdclientapi.Source(uuid=source_db_object.uuid)
 
         if source_db_object.is_starred:
-            self.call_api(self.api.remove_star, self.on_update_star_complete,
+            self.call_api(self.api.add_star, self.on_update_star_complete,
                           self.on_sidebar_action_timeout, source_sdk_object)
         else:
-            self.call_api(self.api.add_star, self.on_update_star_complete,
+            self.call_api(self.api.remove_star, self.on_update_star_complete,
                           self.on_sidebar_action_timeout, source_sdk_object)
 
     def logout(self):
