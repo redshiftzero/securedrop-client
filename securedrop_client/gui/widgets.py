@@ -371,7 +371,11 @@ class SourceList(QListWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setStyleSheet('QListWidget::item:selected { background: #efeef7 }')
+        self.setStyleSheet('''
+
+        QListWidget { show-decoration-selected: 0; border: none; }
+        QListWidget::item:selected { background: #efeef7 }
+        ''')
 
     def setup(self, controller):
         """
@@ -465,10 +469,6 @@ class SourceWidget(QWidget):
         """
         super().__init__(parent)
 
-        self.setStyleSheet('''
-            QWidget#color_bar { background-color: #9211ff; }
-        ''')
-
         self.source = source
         self.name = QLabel()
         self.updated = QLabel()
@@ -486,8 +486,9 @@ class SourceWidget(QWidget):
 
         self.summary_layout.addWidget(self.name)
         self.summary_layout.addStretch()
-        self.summary_layout.addWidget(self.attached)
 
+        self.display_star_icon()
+        self.summary_layout.addWidget(self.attached)
         layout.addWidget(self.summary)
         layout.addWidget(self.updated)
 
@@ -525,7 +526,6 @@ class SourceWidget(QWidget):
         Updates the displayed values with the current values from self.source.
         """
         self.updated.setText(arrow.get(self.source.last_updated).humanize())
-        self.display_star_icon()
         self.name.setText("<strong>{}</strong>".format(
                           html.escape(self.source.journalist_designation)))
 
@@ -681,7 +681,7 @@ class SpeechBubble(QWidget):
     and journalist.
     """
 
-    css = "padding:8px; min-height:32px; border:1px solid #999;"
+    css = "padding: 8px; min-height: 32px; border: none;"
 
     def __init__(self, message_id: str, text: str, update_signal) -> None:
         super().__init__()
@@ -698,7 +698,7 @@ class SpeechBubble(QWidget):
 
     @pyqtSlot(str, str)
     def _update_text(self, message_id: str, text: str) -> None:
-        """
+        """ border: none
         Conditionally update this SpeechBubble's text if and only if the message_id of the emitted
         signal matches the message_id of this speech bubble.
         """
