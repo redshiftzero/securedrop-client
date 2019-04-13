@@ -172,9 +172,15 @@ class Window(QMainWindow):
         """
         source_item = self.main_view.source_list.currentItem()
         source_widget = self.main_view.source_list.itemWidget(source_item)
-        if source_widget:
+
+        # Show conversation for the currently-selected source if it hasn't been deleted. If the
+        # current source no longer exists, clear the conversation for that source
+        self.current_source = None
+        if source_widget and self.controller.source_exists(source_widget.source.uuid):
             self.current_source = source_widget.source
             self.show_conversation_for(self.current_source, self.controller.is_authenticated)
+        else:
+            self.main_view.clear_conversation()
 
     def show_conversation_for(self, source: Source, is_authenticated: bool):
         """

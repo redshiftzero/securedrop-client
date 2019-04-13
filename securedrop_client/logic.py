@@ -731,3 +731,10 @@ class Client(QObject):
     def _on_reply_timeout(self, current_object: (str, str)) -> None:
         _, reply_uuid = current_object
         self.reply_failed.emit(reply_uuid)
+
+    def source_exists(self, source_uuid: str):
+        try:
+            self.session.query(db.Source).filter_by(uuid=source_uuid).one()
+            return True
+        except Exception:
+            return False
