@@ -23,12 +23,14 @@ import sdclientapi
 import shutil
 import traceback
 import uuid
+
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+
 from securedrop_client import storage
 from securedrop_client import db
 from securedrop_client.utils import check_dir_permissions
 from securedrop_client.crypto import GpgHelper, CryptoError
 from securedrop_client.message_sync import MessageSync, ReplySync
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
 
 logger = logging.getLogger(__name__)
 
@@ -731,10 +733,3 @@ class Client(QObject):
     def _on_reply_timeout(self, current_object: (str, str)) -> None:
         _, reply_uuid = current_object
         self.reply_failed.emit(reply_uuid)
-
-    def source_exists(self, source_uuid: str):
-        try:
-            self.session.query(db.Source).filter_by(uuid=source_uuid).one()
-            return True
-        except Exception:
-            return False
