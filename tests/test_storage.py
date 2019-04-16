@@ -874,6 +874,7 @@ def test_source_exists_false(homedir, mocker):
     session = mocker.MagicMock()
     source = mocker.MagicMock()
     source.uuid = 'test-source-uuid'
+    session.query().filter_by().one = mocker.MagicMock()
     session.query().filter_by().one.return_value = NoResultFound
 
-    assert source_exists(session, 'why is this true')
+    assert not source_exists(session, 'why is this true')

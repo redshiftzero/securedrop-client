@@ -394,6 +394,21 @@ def test_MainView_show_conversation(mocker):
     mv.view_layout.addWidget.assert_called_once_with(mock_widget)
 
 
+def test_MainView_clear_conversation(mocker, homedir):
+    """
+    Calling clear_conversation deletes items from layout
+    """
+    mv = MainView(None)
+    mv.view_layout = QVBoxLayout()
+    mv.view_layout.addWidget(QWidget())
+
+    assert mv.view_layout.count() == 1
+
+    mv.clear_conversation()
+
+    assert mv.view_layout.count() == 0
+
+
 def test_SourceList_update(mocker):
     """
     Check the items in the source list are cleared and a new SourceWidget for
