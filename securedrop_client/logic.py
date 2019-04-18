@@ -25,6 +25,7 @@ import traceback
 import uuid
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer, QProcess
+from typing import Dict, Tuple  # noqa: F401
 
 from securedrop_client import storage
 from securedrop_client import db
@@ -143,9 +144,9 @@ class Client(QObject):
         self.gui = gui
 
         # Reference to the API for secure drop proxy.
-        self.api = None
+        self.api = None  # type: sdclientapi.API
         # Contains active threads calling the API.
-        self.api_threads = {}
+        self.api_threads = {}  # type: Dict
 
         # Reference to the SqlAlchemy session.
         self.session = session
@@ -714,7 +715,7 @@ class Client(QObject):
                 logger.error('not logged in - not implemented!')  # pragma: no cover
                 self.reply_failed.emit(msg_uuid)  # pragma: no cover
 
-    def _on_reply_complete(self, result, current_object: (str, str)) -> None:
+    def _on_reply_complete(self, result, current_object: Tuple[str, str]) -> None:
         source_uuid, reply_uuid = current_object
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one()
         if isinstance(result, sdclientapi.Reply):
@@ -730,6 +731,6 @@ class Client(QObject):
         else:
             self.reply_failed.emit(reply_uuid)
 
-    def _on_reply_timeout(self, current_object: (str, str)) -> None:
+    def _on_reply_timeout(self, current_object: Tuple[str, str]) -> None:
         _, reply_uuid = current_object
         self.reply_failed.emit(reply_uuid)
