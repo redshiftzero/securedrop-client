@@ -4,6 +4,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 from PyQt5.QtWidgets import QWidget, QApplication, QWidgetItem, QSpacerItem, QVBoxLayout, \
     QMessageBox, QLabel
 from tests import factory
+import pytest
 from securedrop_client import db, logic
 from securedrop_client.gui.widgets import MainView, SourceList, SourceWidget, LoginDialog, \
     SpeechBubble, ConversationWidget, MessageWidget, ReplyWidget, FileWidget, ConversationView, \
@@ -604,7 +605,7 @@ def test_SourceWidget_delete_source_when_user_chooses_cancel(mocker, session, so
     sw.controller.delete_source.assert_not_called()
 
 
-def test_LoginDialog_setup(mocker):
+def test_LoginDialog_setup(mocker, i18n):
     """
     The LoginView is correctly initialised.
     """
@@ -638,7 +639,7 @@ def test_LoginDialog_reset(mocker):
     ld.error_label.setText.assert_called_once_with('')
 
 
-def test_LoginDialog_error(mocker):
+def test_LoginDialog_error(mocker, i18n):
     """
     Any error message passed in is assigned as the text for the error label.
     """
@@ -1456,6 +1457,14 @@ def test_DeleteSource_from_source_widget_when_user_is_loggedout(mocker):
         source_widget.setup(mock_controller)
         source_widget.delete_source(mock_event)
         mock_delete_source_message_box_obj.launch.assert_not_called()
+
+
+def test_SourceConversationWrapper_raises_exception_no_controller(mocker):
+    mock_source = factory.Source()
+    mock_controller = None
+
+    with pytest.raises(ValueError):
+        SourceConversationWrapper(mock_source, 'mock home', mock_controller, True)
 
 
 def test_SourceConversationWrapper_send_reply(mocker):
