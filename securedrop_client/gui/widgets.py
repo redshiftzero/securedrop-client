@@ -24,7 +24,7 @@ from PyQt5.QtGui import QIcon, QPalette, QBrush, QColor, QFont, QLinearGradient
 from PyQt5.QtWidgets import QListWidget, QLabel, QWidget, QListWidgetItem, QHBoxLayout, \
     QPushButton, QVBoxLayout, QLineEdit, QScrollArea, QDialog, QAction, QMenu, QMessageBox, \
     QToolButton, QSizePolicy, QTextEdit, QStatusBar, QGraphicsDropShadowEffect
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 
 from securedrop_client.db import Source, Message, File, Reply
@@ -725,15 +725,13 @@ class DeleteSourceMessageBox:
             elif isinstance(submission, File):
                 files += 1
 
-        message = (
-            "<big>Deleting the Source account for",
-            "<b>{}</b> will also".format(source.journalist_designation,),
-            "delete {} files, {} replies, and {} messages.</big>".format(files, replies, messages),
-            "<br>",
-            "<small>This Source will no longer be able to correspond",
-            "through the log-in tied to this account.</small>",
-        )
-        message = ' '.join(message)
+        message = ("<big>Deleting the Source account for "
+                   "<b>{}</b> will also "
+                   "delete {} files, {} replies, and {} messages.</big>"
+                   " <br> "
+                   "<small>This Source will no longer be able to correspond "
+                   "through the log-in tied to this account.</small>").format(
+                       source.journalist_designation, files, replies, messages)
         return message
 
 
@@ -1328,12 +1326,16 @@ class SourceConversationWrapper(QWidget):
         self,
         source: Source,
         sdc_home: str,
-        controller: Client,
+        controller: Optional[Client],
         is_authenticated: bool,
         parent=None
     ) -> None:
         super().__init__(parent)
         self.source = source
+
+        if controller is None:
+            raise ValueError("Expected controller to be passed to SourceConversationWrapper")
+
         self.controller = controller
         self.sdc_home = sdc_home
 
@@ -1362,7 +1364,7 @@ class SourceConversationWrapper(QWidget):
         if show:
             new_widget = ReplyBoxWidget(self)
         else:
-            new_widget = QLabel(_('You need to log in to send replies.'))
+            new_widget = QLabel(_('You need to log in to send replies.'))  # type: ignore
 
         old_widget = self.layout.takeAt(2)
         if old_widget is not None:

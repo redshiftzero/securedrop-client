@@ -20,13 +20,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import List
+from typing import Dict, List, Optional  # noqa: F401
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QDesktopWidget
 
 from securedrop_client import __version__
 from securedrop_client.db import Source
 from securedrop_client.storage import source_exists
+from securedrop_client.logic import Client  # noqa: F401
 from securedrop_client.gui.widgets import TopPane, LeftPane, MainView, LoginDialog, \
     SourceConversationWrapper
 from securedrop_client.resources import load_icon
@@ -54,9 +55,9 @@ class Window(QMainWindow):
         """
         super().__init__()
         self.sdc_home = sdc_home
-        self.controller = None
+        self.controller = None  # type: Optional[Client]
 
-        self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
+        self.setWindowTitle(_("SecureDrop Client {}").format(__version__))  # type: ignore
         self.setWindowIcon(load_icon(self.icon))
 
         self.central_widget = QWidget()
@@ -86,7 +87,7 @@ class Window(QMainWindow):
 
         # Cache a dict of source.uuid -> SourceConversationWrapper
         # We do this to not create/destroy widgets constantly (because it causes UI "flicker")
-        self.conversations = {}
+        self.conversations = {}  # type: Dict
 
         self.autosize_window()
         self.show()
